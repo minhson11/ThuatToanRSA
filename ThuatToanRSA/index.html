@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Truyền File với Chữ Ký Số RSA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 2px,
+                rgba(255,255,255,0.1) 2px,
+                rgba(255,255,255,0.1) 4px
+            );
+            animation: shimmer 20s linear infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%); }
+            100% { transform: translateX(100%) translateY(100%); }
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 3px solid #e9ecef;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            background: none;
+            border: none;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            color: #6c757d;
+        }
+
+        .tab.active {
+            background: white;
+            color: #007bff;
+            transform: translateY(-3px);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(45deg, #007bff, #00d4ff);
+        }
+
+        .tab:hover:not(.active) {
+            background: #e9ecef;
+            transform: translateY(-1px);
+        }
+
+        .content {
+            padding: 40px;
+            min-height: 400px;
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1rem;
+        }
+
+        input[type="file"], input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        input[type="file"]:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: #007bff;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #007bff, #00d4ff);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,123,255,0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .info-box::before {
+            content: '🔐';
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            background: white;
+            padding: 0 10px;
+            font-size: 1.5rem;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-weight: 500;
+            display: none;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .status.success {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .keys-display {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            max-height: 200px;
+            overflow-y: auto;
+            word-break: break-all;
+        }
+
+        .download-link {
+            display: inline-block;
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            text-decoration: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            margin: 10px 0;
+            transition: all 0.3s ease;
+        }
+
+        .download-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(40,167,69,0.3);
+            text-decoration: none;
+            color: white;
+        }
+
+        .file-info {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            display: none;
+        }
+
+        .signature-box {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            color: #6c757d;
+        }
+
+        .receive-method {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .tab {
+                border-bottom: 1px solid #dee2e6;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Truyền File với Chữ Ký Số</h1>
+            <p>Bảo mật file với công nghệ RSA</p>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showSection('signer')">Người Ký</button>
+            <button class="tab" onclick="showSection('transfer')">Gửi File</button>
+            <button class="tab" onclick="showSection('receiver')">Người Nhận</button>
+        </div>
+        
+        <div class="content">
+            <!-- Phần người ký -->
+            <div id="signer" class="section active">
+                <h2>📤 Ký và Gửi File</h2>
+                
+                <div class="form-group">
+                    <label for="fileInput">Chọn file cần ký:</label>
+                    <input type="file" id="fileInput" accept="*" onchange="handleFileSelect(event)">
+                </div>
+                
+                <div class="file-info" id="fileInfo"></div>
+                
+                <div class="form-group">
+                    <button class="btn" onclick="generateKeys()" id="generateBtn">Tạo Cặp Khóa RSA</button>
+                </div>
+                
+                <div id="keysDisplay" style="display: none;">
+                    <h3>🔑 Khóa Công Khai (Gửi cho người nhận):</h3>
+                    <div class="keys-display" id="publicKeyDisplay"></div>
+                    
+                    <h3>🔒 Khóa Riêng Tư (Giữ bí mật):</h3>
+                    <div class="keys-display" id="privateKeyDisplay"></div>
+                </div>
+                
+                <div class="form-group">
+                    <button class="btn" onclick="signFile()" id="signBtn" disabled>Ký File</button>
+                </div>
+                
+                <div class="signature-box" id="signatureDisplay">
+                    Chữ ký sẽ hiển thị ở đây sau khi ký file
+                </div>
+                
+                <div class="status" id="signerStatus"></div>
+            </div>
+            
+            <!-- Phần gửi file -->
+            <div id="transfer" class="section">
+                <h2>📤 Gửi File Đã Ký</h2>
+                
+                <div class="info-box">
+                    <h3>📋 Thông tin gửi file:</h3>
+                    <p>Sau khi ký file, bạn có thể tạo một gói truyền để gửi cho người nhận. Gói này sẽ bao gồm:</p>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li>File gốc đã ký</li>
+                        <li>Khóa công khai để xác minh</li>
+                        <li>Chữ ký số</li>
+                        <li>Thông tin file</li>
+                    </ul>
+                </div>
+                
+                <div id="transferContent" style="display: none;">
+                    <div class="form-group">
+                        <label for="recipientName">Tên người nhận:</label>
+                        <input type="text" id="recipientName" placeholder="Nhập tên người nhận...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="transferNote">Ghi chú (tùy chọn):</label>
+                        <input type="text" id="transferNote" placeholder="Ghi chú cho người nhận...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <button class="btn" onclick="createTransferPackage()">📦 Tạo Gói Truyền</button>
+                    </div>
+                    
+                    <div id="transferPackage" style="display: none;">
+                        <h3>📦 Gói Truyền Đã Tạo</h3>
+                        <div class="info-box">
+                            <p><strong>Tên gói:</strong> <span id="packageName"></span></p>
+                            <p><strong>Người nhận:</strong> <span id="packageRecipient"></span></p>
+                            <p><strong>Thời gian tạo:</strong> <span id="packageTime"></span></p>
+                            <p><strong>Kích thước:</strong> <span id="packageSize"></span></p>
+                        </div>
+                        
+                        <div class="form-group">
+                            <a href="#" class="download-link" id="downloadPackage" download>
+                                📥 Tải Gói Truyền Xuống
+                            </a>
+                        </div>
+                        
+                        <div class="info-box" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+                            <h4>📋 Hướng dẫn gửi file:</h4>
+                            <ol style="margin-left: 20px; margin-top: 10px;">
+                                <li>Tải gói truyền xuống máy</li>
+                                <li>Gửi file này cho người nhận qua email, chat, hoặc USB</li>
+                                <li>Hướng dẫn người nhận sử dụng tab "Nhận File" để xác minh</li>
+                            </ol>
+                        </div>
+                        
+                        <div class="form-group">
+                            <button class="btn" onclick="generateQRCode()" style="background: linear-gradient(45deg, #9c27b0, #e91e63);">
+                                📱 Tạo Mã QR
+                            </button>
+                        </div>
+                        
+                        <div id="qrCodeSection" style="display: none; text-align: center; margin: 20px 0;">
+                            <h4>📱 Mã QR cho Gói Truyền</h4>
+                            <div id="qrCode" style="margin: 20px 0;"></div>
+                            <p style="font-size: 0.9rem; color: #666;">
+                                Người nhận có thể quét mã QR này để nhận thông tin gói truyền
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="noSignedFile" class="info-box" style="background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);">
+                    <h3>⚠️ Chưa có file đã ký</h3>
+                    <p>Vui lòng quay lại tab "Người Ký" để:</p>
+                    <ol style="margin-left: 20px; margin-top: 10px;">
+                        <li>Chọn file cần ký</li>
+                        <li>Tạo cặp khóa RSA</li>
+                        <li>Ký file</li>
+                    </ol>
+                    <button class="btn" onclick="showSection('signer'); document.querySelector('.tab').click();" style="margin-top: 15px;">
+                        🔙 Quay lại Ký File
+                    </button>
+                </div>
+                
+                <div class="status" id="transferStatus"></div>
+            </div>
+            
+            <!-- Phần người nhận -->
+            <div id="receiver" class="section">
+                <h2>📥 Nhận và Xác Minh File</h2>
+                
+                <div class="tabs" style="background: #f1f3f4; margin-bottom: 20px; border-radius: 10px;">
+                    <button class="tab" onclick="showReceiveMethod('manual')" id="manualTab" style="border-radius: 10px 0 0 10px;">
+                        ✋ Nhập Thủ Công
+                    </button>
+                    <button class="tab active" onclick="showReceiveMethod('package')" id="packageTab" style="border-radius: 0 10px 10px 0;">
+                        📦 Từ Gói Truyền
+                    </button>
+                </div>
+                
+                <!-- Phương thức nhận từ gói truyền -->
+                <div id="receivePackage" class="receive-method active">
+                    <div class="form-group">
+                        <label for="packageFileInput">Chọn gói truyền đã nhận:</label>
+                        <input type="file" id="packageFileInput" accept=".json" onchange="handlePackageFile(event)">
+                    </div>
+                    
+                    <div id="packageInfo" style="display: none;">
+                        <div class="info-box">
+                            <h3>📦 Thông tin gói truyền:</h3>
+                            <div id="packageDetails"></div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <button class="btn" onclick="verifyPackage()">🔍 Xác Minh Gói Truyền</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Phương thức nhập thủ công -->
+                <div id="receiveManual" class="receive-method" style="display: none;">
+                    <div class="form-group">
+                        <label for="receivedFileInput">File nhận được:</label>
+                        <input type="file" id="receivedFileInput" accept="*" onchange="handleReceivedFile(event)">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="publicKeyInput">Khóa công khai của người gửi:</label>
+                        <input type="text" id="publicKeyInput" placeholder="Dán khóa công khai vào đây...">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="signatureInput">Chữ ký từ người gửi:</label>
+                        <input type="text" id="signatureInput" placeholder="Dán chữ ký vào đây...">
+                    </div>
+
+                    <div class="form-group">
+                        <button class="btn" onclick="verifySignature()" id="verifyBtn">🔍 Xác Minh Chữ Ký</button>
+                    </div>
+                </div>
+                
+                <div class="info-box" id="verificationResult" style="display: none;">
+                    <h3>Kết quả xác minh:</h3>
+                    <div id="verificationStatus"></div>
+                    <div id="downloadSection" style="display: none;">
+                        <p>✅ File đã được xác minh thành công!</p>
+                        <a href="#" class="download-link" id="downloadLink" download>📥 Tải File Xuống</a>
+                    </div>
+                </div>
+                
+                <div class="status" id="receiverStatus"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Biến toàn cục
+        let currentFile = null;
+        let keyPair = null;
+        let fileSignature = null;
+        let receivedFile = null;
+        let transferPackageData = null;
+
+        // Hàm chuyển đổi tab
+        function showSection(section) {
+            // Ẩn tất cả sections
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.tabs > .tab').forEach(t => t.classList.remove('active'));
+            
+            // Hiển thị section được chọn
+            document.getElementById(section).classList.add('active');
+            event.target.classList.add('active');
+            
+            // Kiểm tra và hiển thị nội dung phù hợp cho tab gửi file
+            if (section === 'transfer') {
+                checkSignedFileStatus();
+            }
+            
+            // Reset trạng thái cho tab người nhận
+            if (section === 'receiver') {
+                showReceiveMethod('package');
+            }
+        }
+
+        // Hàm chuyển đổi phương thức nhận file
+        function showReceiveMethod(method) {
+            // Ẩn tất cả phương thức
+            document.querySelectorAll('.receive-method').forEach(m => {
+                m.style.display = 'none';
+                m.classList.remove('active');
+            });
+            
+            // Bỏ active cho tất cả tab con
+            document.querySelectorAll('#receiver .tab').forEach(t => t.classList.remove('active'));
+            
+            // Hiển thị phương thức được chọn
+            if (method === 'manual') {
+                document.getElementById('receiveManual').style.display = 'block';
+                document.getElementById('receiveManual').classList.add('active');
+                document.getElementById('manualTab').classList.add('active');
+            } else {
+                document.getElementById('receivePackage').style.display = 'block';
+                document.getElementById('receivePackage').classList.add('active');
+                document.getElementById('packageTab').classList.add('active');
+            }
+        }
+
+        // Hàm hiển thị thông báo trạng thái
+        function showStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status ${type}`;
+            element.style.display = 'block';
+            
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 5000);
+        }
+
+        // Xử lý chọn file ở phần người ký
+        function handleFileSelect(event) {
+            currentFile = event.target.files[0];
+            if (currentFile) {
+                const fileInfo = document.getElementById('fileInfo');
+                fileInfo.innerHTML = `
+                    <strong>📄 File đã chọn:</strong><br>
+                    Tên: ${currentFile.name}<br>
+                    Kích thước: ${(currentFile.size / 1024).toFixed(2)} KB<br>
+                    Loại: ${currentFile.type || 'Không xác định'}
+                `;
+                fileInfo.style.display = 'block';
+                
+                // Enable sign button if keys exist
+                if (keyPair) {
+                    document.getElementById('signBtn').disabled = false;
+                }
+            }
+        }
+
+        // Xử lý file nhận được ở phần người nhận
+        function handleReceivedFile(event) {
+            receivedFile = event.target.files[0];
+        }
+
+        // Hàm chuyển đổi ArrayBuffer sang Base64
+        function arrayBufferToBase64(buffer) {
+            const bytes = new Uint8Array(buffer);
+            let binary = '';
+            for (let i = 0; i < bytes.length; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary);
+        }
+
+        // Hàm chuyển đổi Base64 sang ArrayBuffer
+        function base64ToArrayBuffer(base64) {
+            const binary = atob(base64);
+            const buffer = new ArrayBuffer(binary.length);
+            const bytes = new Uint8Array(buffer);
+            for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            return buffer;
+        }
+
+        // Tạo cặp khóa RSA
+        async function generateKeys() {
+            try {
+                showStatus('signerStatus', 'Đang tạo cặp khóa RSA...', 'success');
+                
+                keyPair = await window.crypto.subtle.generateKey(
+                    {
+                        name: "RSA-PSS",
+                        modulusLength: 2048,
+                        publicExponent: new Uint8Array([1, 0, 1]),
+                        hash: "SHA-256",
+                    },
+                    true,
+                    ["sign", "verify"]
+                );
+
+                // Xuất khóa công khai
+                const publicKey = await window.crypto.subtle.exportKey("spki", keyPair.publicKey);
+                const publicKeyBase64 = arrayBufferToBase64(publicKey);
+                
+                // Xuất khóa riêng tư
+                const privateKey = await window.crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
+                const privateKeyBase64 = arrayBufferToBase64(privateKey);
+
+                // Hiển thị khóa
+                document.getElementById('publicKeyDisplay').textContent = publicKeyBase64;
+                document.getElementById('privateKeyDisplay').textContent = privateKeyBase64;
+                document.getElementById('keysDisplay').style.display = 'block';
+
+                // Enable sign button if file is selected
+                if (currentFile) {
+                    document.getElementById('signBtn').disabled = false;
+                }
+
+                showStatus('signerStatus', '✅ Đã tạo cặp khóa RSA thành công!', 'success');
+            } catch (error) {
+                showStatus('signerStatus', '❌ Lỗi khi tạo khóa: ' + error.message, 'error');
+            }
+        }
+
+        // Ký file
+        async function signFile() {
+            if (!currentFile || !keyPair) {
+                showStatus('signerStatus', '❌ Vui lòng chọn file và tạo khóa trước!', 'error');
+                return;
+            }
+
+            try {
+                showStatus('signerStatus', 'Đang ký file...', 'success');
+
+                // Đọc file
+                const fileBuffer = await currentFile.arrayBuffer();
+                
+                // Tạo hash của file
+                const hashBuffer = await window.crypto.subtle.digest('SHA-256', fileBuffer);
+                
+                // Ký hash
+                const signature = await window.crypto.subtle.sign(
+                    {
+                        name: "RSA-PSS",
+                        saltLength: 32,
+                    },
+                    keyPair.privateKey,
+                    hashBuffer
+                );
+
+                fileSignature = arrayBufferToBase64(signature);
+                
+                // Hiển thị chữ ký
+                document.getElementById('signatureDisplay').innerHTML = `
+                    <strong>✅ Chữ ký đã tạo:</strong><br>
+                    <small style="word-break: break-all; color: #007bff;">${fileSignature}</small>
+                `;
+
+                showStatus('signerStatus', '✅ Đã ký file thành công! Hãy chuyển sang tab "Gửi File" để tạo gói truyền.', 'success');
+            } catch (error) {
+                showStatus('signerStatus', '❌ Lỗi khi ký file: ' + error.message, 'error');
+            }
+        }
+
+        // Kiểm tra trạng thái file đã ký
+        function checkSignedFileStatus() {
+            const transferContent = document.getElementById('transferContent');
+            const noSignedFile = document.getElementById('noSignedFile');
+            
+            if (currentFile && keyPair && fileSignature) {
+                transferContent.style.display = 'block';
+                noSignedFile.style.display = 'none';
+            } else {
+                transferContent.style.display = 'none';
+                noSignedFile.style.display = 'block';
+            }
+        }
+
+        // Tạo gói truyền
+        async function createTransferPackage() {
+            const recipientName = document.getElementById('recipientName').value.trim();
+            
+            if (!recipientName) {
+                showStatus('transferStatus', '❌ Vui lòng nhập tên người nhận!', 'error');
+                return;
+            }
+
+            try {
+                showStatus('transferStatus', 'Đang tạo gói truyền...', 'success');
+
+                // Đọc file gốc
+                const fileBuffer = await currentFile.arrayBuffer();
+                const fileBase64 = arrayBufferToBase64(fileBuffer);
+                
+                // Xuất khóa công khai
+                const publicKey = await window.crypto.subtle.exportKey("spki", keyPair.publicKey);
+                const publicKeyBase64 = arrayBufferToBase64(publicKey);
+
+                // Tạo gói truyền
+                transferPackageData = {
+                    version: "1.0",
+                    timestamp: new Date().toISOString(),
+                    sender: "Người ký",
+                    recipient: recipientName,
+                    note: document.getElementById('transferNote').value.trim(),
+                    file: {
+                        name: currentFile.name,
+                        type: currentFile.type,
+                        size: currentFile.size,
+                        data: fileBase64
+                    },
+                    publicKey: publicKeyBase64,
+                    signature: fileSignature,
+                    hash: "SHA-256"
+                };
+
+                // Tạo file JSON
+                const packageJson = JSON.stringify(transferPackageData, null, 2);
+                const packageBlob = new Blob([packageJson], { type: 'application/json' });
+                const packageUrl = URL.createObjectURL(packageBlob);
+
+                // Cập nhật thông tin gói
+                const packageName = `${currentFile.name.split('.')[0]}_signed_package.json`;
+                document.getElementById('packageName').textContent = packageName;
+                document.getElementById('packageRecipient').textContent = recipientName;
+                document.getElementById('packageTime').textContent = new Date().toLocaleString('vi-VN');
+                document.getElementById('packageSize').textContent = (packageBlob.size / 1024).toFixed(2) + ' KB';
+
+                // Tạo link download
+                const downloadLink = document.getElementById('downloadPackage');
+                downloadLink.href = packageUrl;
+                downloadLink.download = packageName;
+
+                // Hiển thị gói truyền
+                document.getElementById('transferPackage').style.display = 'block';
+                
+                showStatus('transferStatus', '✅ Đã tạo gói truyền thành công!', 'success');
+            } catch (error) {
+                showStatus('transferStatus', '❌ Lỗi khi tạo gói truyền: ' + error.message, 'error');
+            }
+        }
+
+        // Tạo mã QR
+        function generateQRCode() {
+            if (!transferPackageData) return;
+
+            const qrData = {
+                type: "RSA_SIGNED_PACKAGE",
+                packageName: document.getElementById('packageName').textContent,
+                recipient: transferPackageData.recipient,
+                fileInfo: {
+                    name: transferPackageData.file.name,
+                    size: transferPackageData.file.size
+                },
+                timestamp: transferPackageData.timestamp
+            };
+
+            // Tạo QR code đơn giản (text-based)
+            const qrContent = JSON.stringify(qrData, null, 2);
+            const qrSection = document.getElementById('qrCodeSection');
+            const qrCodeDiv = document.getElementById('qrCode');
+            
+            qrCodeDiv.innerHTML = `
+                <div style="background: white; border: 2px solid #333; padding: 20px; display: inline-block; font-family: monospace; font-size: 8px; line-height: 1;">
+                    <div style="text-align: center; margin-bottom: 10px; font-size: 12px; font-weight: bold;">QR Code Info</div>
+                    <div style="word-break: break-all; max-width: 200px;">${qrContent}</div>
+                </div>
+            `;
+            
+            qrSection.style.display = 'block';
+            showStatus('transferStatus', '✅ Đã tạo mã QR thông tin gói truyền!', 'success');
+        }
+
+        // Xử lý file gói truyền
+        function handlePackageFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const packageData = JSON.parse(e.target.result);
+                    
+                    // Hiển thị thông tin gói
+                    document.getElementById('packageDetails').innerHTML = `
+                        <p><strong>📦 Tên gói:</strong> ${file.name}</p>
+                        <p><strong>👤 Người gửi:</strong> ${packageData.sender || 'Không xác định'}</p>
+                        <p><strong>👥 Người nhận:</strong> ${packageData.recipient || 'Không xác định'}</p>
+                        <p><strong>📄 File gốc:</strong> ${packageData.file.name}</p>
+                        <p><strong>📏 Kích thước:</strong> ${(packageData.file.size / 1024).toFixed(2)} KB</p>
+                        <p><strong>🕒 Thời gian:</strong> ${new Date(packageData.timestamp).toLocaleString('vi-VN')}</p>
+                        <p><strong>💬 Ghi chú:</strong> ${packageData.note || 'Không có'}</p>
+                    `;
+                    
+                    document.getElementById('packageInfo').style.display = 'block';
+                    
+                    // Lưu dữ liệu gói để xử lý
+                    window.currentPackageData = packageData;
+                    
+                } catch (error) {
+                    showStatus('receiverStatus', '❌ File gói truyền không hợp lệ!', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Xác minh gói truyền
+        async function verifyPackage() {
+            if (!window.currentPackageData) {
+                showStatus('receiverStatus', '❌ Vui lòng chọn file gói truyền!', 'error');
+                return;
+            }
+
+            try {
+                showStatus('receiverStatus', 'Đang xác minh gói truyền...', 'success');
+
+                const packageData = window.currentPackageData;
+                
+                // Chuyển đổi dữ liệu file từ base64
+                const fileBuffer = base64ToArrayBuffer(packageData.file.data);
+                
+                // Import khóa công khai
+                const publicKeyBuffer = base64ToArrayBuffer(packageData.publicKey);
+                const publicKey = await window.crypto.subtle.importKey(
+                    "spki",
+                    publicKeyBuffer,
+                    {
+                        name: "RSA-PSS",
+                        hash: "SHA-256",
+                    },
+                    false,
+                    ["verify"]
+                );
+
+                // Tạo hash của file
+                const hashBuffer = await window.crypto.subtle.digest('SHA-256', fileBuffer);
+                
+                // Chuyển đổi chữ ký từ base64
+                const signatureBuffer = base64ToArrayBuffer(packageData.signature);
+
+                // Xác minh chữ ký
+                const isValid = await window.crypto.subtle.verify(
+                    {
+                        name: "RSA-PSS",
+                        saltLength: 32,
+                    },
+                    publicKey,
+                    signatureBuffer,
+                    hashBuffer
+                );
+
+                // Hiển thị kết quả
+                const resultDiv = document.getElementById('verificationResult');
+                const statusDiv = document.getElementById('verificationStatus');
+                const downloadSection = document.getElementById('downloadSection');
+
+                resultDiv.style.display = 'block';
+
+                if (isValid) {
+                    statusDiv.innerHTML = `
+                        <div style="color: #155724; font-weight: bold; font-size: 1.2rem;">
+                            ✅ GÓI TRUYỀN HỢP LỆ
+                        </div>
+                        <p style="margin-top: 10px;">Gói truyền đã được xác minh thành công. File nguyên bản không bị thay đổi.</p>
+                        <div style="margin-top: 15px; padding: 10px; background: #d1f2eb; border-radius: 5px;">
+                            <strong>📋 Thông tin xác minh:</strong><br>
+                            • Chữ ký hợp lệ ✅<br>
+                            • File nguyên vẹn ✅<br>
+                            • Khóa công khai đúng ✅
+                        </div>
+                    `;
+                    
+                    // Tạo file blob và link download
+                    const fileBlob = new Blob([fileBuffer], { type: packageData.file.type });
+                    const downloadLink = document.getElementById('downloadLink');
+                    const url = URL.createObjectURL(fileBlob);
+                    downloadLink.href = url;
+                    downloadLink.download = packageData.file.name;
+                    
+                    downloadSection.style.display = 'block';
+                    showStatus('receiverStatus', '✅ Xác minh thành công! File có thể tải về an toàn.', 'success');
+                } else {
+                    statusDiv.innerHTML = `
+                        <div style="color: #721c24; font-weight: bold; font-size: 1.2rem;">
+                            ❌ GÓI TRUYỀN KHÔNG HỢP LỆ
+                        </div>
+                        <p style="margin-top: 10px; color: #721c24;">
+                            <strong>CẢNH BÁO:</strong> Gói truyền có thể đã bị thay đổi hoặc không đúng người gửi. 
+                            Không nên tải file này!
+                        </p>
+                        <div style="margin-top: 15px; padding: 10px; background: #f8d7da; border-radius: 5px; color: #721c24;">
+                            <strong>⚠️ Lý do có thể:</strong><br>
+                            • Chữ ký không hợp lệ<br>
+                            • File đã bị thay đổi<br>
+                            • Khóa công khai sai<br>
+                            • Gói truyền bị hỏng
+                        </div>
+                    `;
+                    downloadSection.style.display = 'none';
+                    showStatus('receiverStatus', '❌ Gói truyền không hợp lệ! Không an toàn để tải.', 'error');
+                }
+
+            } catch (error) {
+                showStatus('receiverStatus', '❌ Lỗi khi xác minh gói truyền: ' + error.message, 'error');
+                document.getElementById('verificationResult').style.display = 'none';
+            }
+        }
+
+        // Xác minh chữ ký
+        async function verifySignature() {
+            const publicKeyInput = document.getElementById('publicKeyInput').value.trim();
+            const signatureInput = document.getElementById('signatureInput').value.trim();
+
+            if (!receivedFile || !publicKeyInput || !signatureInput) {
+                showStatus('receiverStatus', '❌ Vui lòng cung cấp đầy đủ file, khóa công khai và chữ ký!', 'error');
+                return;
+            }
+
+            try {
+                showStatus('receiverStatus', 'Đang xác minh chữ ký...', 'success');
+
+                // Import khóa công khai
+                const publicKeyBuffer = base64ToArrayBuffer(publicKeyInput);
+                const publicKey = await window.crypto.subtle.importKey(
+                    "spki",
+                    publicKeyBuffer,
+                    {
+                        name: "RSA-PSS",
+                        hash: "SHA-256",
+                    },
+                    false,
+                    ["verify"]
+                );
+
+                // Đọc file và tạo hash
+                const fileBuffer = await receivedFile.arrayBuffer();
+                const hashBuffer = await window.crypto.subtle.digest('SHA-256', fileBuffer);
+
+                // Chuyển đổi chữ ký từ base64
+                const signatureBuffer = base64ToArrayBuffer(signatureInput);
+
+                // Xác minh chữ ký
+                const isValid = await window.crypto.subtle.verify(
+                    {
+                        name: "RSA-PSS",
+                        saltLength: 32,
+                    },
+                    publicKey,
+                    signatureBuffer,
+                    hashBuffer
+                );
+
+                // Hiển thị kết quả
+                const resultDiv = document.getElementById('verificationResult');
+                const statusDiv = document.getElementById('verificationStatus');
+                const downloadSection = document.getElementById('downloadSection');
+
+                resultDiv.style.display = 'block';
+
+                if (isValid) {
+                    statusDiv.innerHTML = `
+                        <div style="color: #155724; font-weight: bold; font-size: 1.2rem;">
+                            ✅ CHỮ KÝ HỢP LỆ
+                        </div>
+                        <p style="margin-top: 10px;">File đã được xác minh thành công. Bạn có thể tải xuống một cách an toàn.</p>
+                    `;
+                    
+                    // Tạo link download
+                    const downloadLink = document.getElementById('downloadLink');
+                    const url = URL.createObjectURL(receivedFile);
+                    downloadLink.href = url;
+                    downloadLink.download = receivedFile.name;
+                    
+                    downloadSection.style.display = 'block';
+                    showStatus('receiverStatus', '✅ Xác minh thành công! File có thể tải về an toàn.', 'success');
+                } else {
+                    statusDiv.innerHTML = `
+                        <div style="color: #721c24; font-weight: bold; font-size: 1.2rem;">
+                            ❌ CHỮ KÝ KHÔNG HỢP LỆ
+                        </div>
+                        <p style="margin-top: 10px; color: #721c24;">
+                            <strong>CẢNH BÁO:</strong> File có thể đã bị thay đổi hoặc chữ ký không đúng. 
+                            Không nên tải file này!
+                        </p>
+                    `;
+                    downloadSection.style.display = 'none';
+                    showStatus('receiverStatus', '❌ Chữ ký không hợp lệ! File có thể đã bị thay đổi.', 'error');
+                }
+
+            } catch (error) {
+                showStatus('receiverStatus', '❌ Lỗi khi xác minh: ' + error.message, 'error');
+                document.getElementById('verificationResult').style.display = 'none';
+            }
+        }
+
+        // Khởi tạo
+        document.addEventListener('DOMContentLoaded', function() {
+            showStatus('signerStatus', '👋 Chào mừng! Hãy bắt đầu bằng cách chọn file và tạo khóa RSA.', 'success');
+        });
+    </script>
+</body>
+</html>
