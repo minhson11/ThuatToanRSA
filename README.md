@@ -1,9 +1,9 @@
 <p align="center">
-        <img src="https://github.com/minhson11/SHA-256/blob/main/giao%20di%E1%BB%87n.png" width="500"/>
+        <img src="https://github.com/minhson11/ThuatToanRSA/blob/main/1.png" width="500"/>
     </p>
 <p align="center">
-        <img src="https://github.com/minhson11/SHA-256/blob/main/%C4%91%C4%83ng%20Nh%E1%BA%ADp.png" width="500"/>
+        <img src="https://github.com/minhson11/ThuatToanRSA/blob/main/2.png" width="500"/>
     </p>
 <p align="center">
-        <img src="https://github.com/minhson11/SHA-256/blob/main/giao%20di%E1%BB%87n.png" width="500"/>
+        <img src="https://github.com/minhson11/ThuatToanRSA/blob/main/3.png" width="500"/>
     </p>
